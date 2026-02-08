@@ -40,56 +40,22 @@ public class BoardService {
   }
 
   public void create(Long userId, CreateBoardRequestDto createBoardRequestDto) {
-    // 게시글 저장을 성공했는 지 판단하는 플래그
-    boolean isBoardCreated = false;
-    Long savedBoardId = null;
-    
-    // 포인트 차감을 성공했는 지 판단하는 플래그
-    boolean isPointDeducted = false;
+    // 게시글 작성
+    Board board = new Board(
+        createBoardRequestDto.getTitle(),
+        createBoardRequestDto.getContent(),
+        userId
+    );
 
-    try {
-      // 게시글 작성 전 100 포인트 차감
-      pointClient.deductPoints(userId, 100);
-      isPointDeducted = true; // 포인트 차감 성공 플래그
-      System.out.println("포인트 차감 성공");
+    this.boardRepository.save(board);
+    System.out.println("게시글 저장 성공");
 
-      // 게시글 작성
-      Board board = new Board(
-          createBoardRequestDto.getTitle(),
-          createBoardRequestDto.getContent(),
-          userId
-      );
-
-      Board savedBoard = this.boardRepository.save(board);
-      savedBoardId = savedBoard.getBoardId();
-      isBoardCreated = true; // 게시글 저장 성공 플래그
-      System.out.println("게시글 저장 성공");
-
-      // 게시글 작성 시 작성자에게 활동 점수 10점 부여
-      userClient.addActivityScore(userId, 10);
-      System.out.println("활동 점수 적립 성공");
-      
-      // '게시글 작성 완료' 이벤트 발행
-      BoardCreatedEvent boardCreatedEvent
-          = new BoardCreatedEvent(userId);
-      this.kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
-      System.out.println("게시글 작성 완료 이벤트 발행");
-
-    } catch (Exception e) {
-      if (isBoardCreated) {
-        // 게시글 작성 보상 트랜잭션 => 게시글 삭제
-        this.boardRepository.deleteById(savedBoardId);
-        System.out.println("[보상 트랜잭션] 게시글 삭제");
-      }
-      if (isPointDeducted) {
-        // 포인트 차감 보상 트랜잭션 => 포인트 적립
-        pointClient.addPoints(userId, 100);
-        System.out.println("[보상 트랜잭션] 포인트 적립");
-      }
-
-      // 실패 응답으로 처리하기 위해 예외 던지기
-      throw e;
-    }
+    // '게시글 작성 완료' 이벤트 발행
+    // 포인트 서비스와 유저 서비스는 이 이벤트를 구독하여 포인트 차감 및 활동 점수 적립을 처리함
+    BoardCreatedEvent boardCreatedEvent
+        = new BoardCreatedEvent(userId);
+    this.kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
+    System.out.println("게시글 작성 완료 이벤트 발행");
   }
 
   @Transactional(readOnly = true)

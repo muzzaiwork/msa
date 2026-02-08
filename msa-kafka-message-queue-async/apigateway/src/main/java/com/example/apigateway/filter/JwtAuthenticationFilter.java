@@ -26,15 +26,20 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory {
                     .getFirst("Authorization");
             System.out.println("토큰 : " + token);
 
+            // "Bearer " 접두사가 있으면 제거
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // GET 요청이면서 토큰이 없는 경우는 통과 (인증 필요 없는 조회 API)
+            if (token == null && exchange.getRequest().getMethod().name().equals("GET")) {
+                return chain.filter(exchange);
+            }
+
             // 토큰이 없을 경우 401 Unauthorized로 응답
             if (token == null) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
-            }
-
-            // "Bearer " 접두사가 있으면 제거
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
             }
 
             try {
@@ -50,17 +55,18 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory {
 
                 // Payload를 X-User-Id 헤더에 담아서 Request 전달
                 // (= 다른 마이크로서비스에 요청 전달할 때 userId 정보를 담아서 보냄)
+                var mutatedRequest = exchange.getRequest()
+                        .mutate()
+                        .header("X-User-Id", subject)
+                        .build();
+
                 return chain.filter(
                         exchange.mutate()
-                                .request(
-                                        exchange.getRequest()
-                                                .mutate()
-                                                .header("X-User-Id", subject)
-                                                .build()
-                                )
+                                .request(mutatedRequest)
                                 .build()
                 );
             } catch (Exception e) {
+                System.out.println("JWT 검증 실패: " + e.getMessage());
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }

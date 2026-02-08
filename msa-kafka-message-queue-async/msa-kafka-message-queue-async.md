@@ -116,6 +116,11 @@ docker-compose up -d --build
 
 ---
 
+## 🧪 API 테스트 결과
+상세한 테스트 시나리오와 결과는 [api-test-results.md](./api-test-results.md) 파일에서 확인할 수 있습니다.
+
+---
+
 ## 📚 5. 핵심 학습 포인트 (Core Concepts)
 
 ### 1) 데이터 동기화 (Data Synchronization)를 통한 조회 최적화

@@ -103,13 +103,13 @@ public class UserService {
     User user = this.userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다. id=" + userId));
 
-    return new UserResponseDto(user.getUserId(), user.getName(), user.getEmail());
+    return new UserResponseDto(user.getUserId(), user.getName(), user.getEmail(), user.getActivityScore());
   }
 
   @Transactional(readOnly = true)
   public List<UserResponseDto> findByIds(List<Long> ids) {
     return userRepository.findAllById(ids).stream()
-        .map(user -> new UserResponseDto(user.getUserId(), user.getName(), user.getEmail()))
+        .map(user -> new UserResponseDto(user.getUserId(), user.getName(), user.getEmail(), user.getActivityScore()))
         .collect(Collectors.toList());
   }
 
