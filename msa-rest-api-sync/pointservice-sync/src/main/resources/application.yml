@@ -5,7 +5,7 @@ spring:
   application:
     name: pointservice
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3308/point_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3308/point_db_sync?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: root
     password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -29,6 +29,10 @@ package "External" {
     [Client / Browser] as Client
 }
 
+package "API Gateway" {
+    [Spring Cloud Gateway (Port: 8000)] as Gateway
+}
+
 package "Message Broker" {
     component "Kafka" as Kafka
 }
@@ -53,7 +57,10 @@ package "MSA Network" {
     }
 }
 
-Client -> BS
+Client -> Gateway
+Gateway -> BS
+Gateway -> US
+Gateway -> PS
 BService -[bold]-> Kafka : Publish: BoardCreated
 Kafka -[bold]-> PService : Subscribe: BoardCreated
 Kafka -[bold]-> UService : Subscribe: BoardCreated
@@ -92,10 +99,77 @@ docker-compose up -d --build
 
 | Service | Method | URL | Description |
 | :--- | :--- | :--- | :--- |
-| **User** | `POST` | `http://localhost:8084/users/sign-up` | 회원가입 (1000pt 지급) |
-| **Board** | `POST` | `http://localhost:8085/boards` | 게시글 작성 (이벤트 발행 시작) |
-| **Point** | `GET` | `http://localhost:8086/points/{userId}` | 포인트 잔액 조회 |
+| **Gateway** | `-` | `http://localhost:8000` | 모든 서비스의 단일 진입점 |
+| **User** | `POST` | `http://localhost:8000/api/users/login` | [외부] 로그인 (JWT 발급) |
+| **User** | `POST` | `http://localhost:8000/api/users/sign-up` | [외부] 회원가입 |
+| **User** | `GET` | `http://localhost:8084/internal/users/{userId}` | [내부] 특정 사용자 정보 조회 |
+| **User** | `GET` | `http://localhost:8084/internal/users` | [내부] 여러 사용자 정보 조회 |
+| **User** | `POST` | `http://localhost:8084/internal/users/activity-score/add` | [내부] 활동 점수 적립 |
+| **Board** | `POST` | `http://localhost:8000/api/boards` | [외부] 게시글 작성 |
+| **Board** | `GET` | `http://localhost:8000/api/boards` | [외부] 전체 게시글 조회 |
+| **Board** | `GET` | `http://localhost:8000/api/boards/{boardId}` | [외부] 특정 게시글 조회 |
+| **Point** | `GET` | `http://localhost:8086/internal/points/{userId}` | [내부] 포인트 조회 |
+| **Point** | `POST` | `http://localhost:8086/internal/points/add` | [내부] 포인트 적립 |
+| **Point** | `POST` | `http://localhost:8086/internal/points/deduct` | [내부] 포인트 차감 |
+
+> **Note**: 내부용 API(`/internal/**`)는 API Gateway를 통해 노출되지 않으며, 마이크로서비스 간 직접 통신에만 사용됩니다.
 
 ---
 
 ## 📚 5. 핵심 학습 포인트 (Core Concepts)
+
+### 1) 데이터 동기화 (Data Synchronization)를 통한 조회 최적화
+동기 방식(Sync)에서는 게시글을 조회할 때마다 사용자 서비스의 API를 호출하여 정보를 가져왔다. 하지만 비동기 메시징을 활용하면 이를 더 효율적으로 개선할 수 있다.
+
+*   **[개선 방식] 데이터 복제 (Data Replication)**:
+    1.  사용자 서비스에서 회원가입/정보수정 시 Kafka로 이벤트를 발행한다 (`user.signed-up`).
+    2.  게시글 서비스는 이 이벤트를 구독하여, 필요한 사용자 정보(`userId`, `name`)를 **자신의 로컬 DB에 별도의 테이블로 동기화**한다.
+    3.  게시글 조회 시 외부 API 호출 없이 **자신의 DB에서 즉시 조인(Join)**하여 결과를 반환한다.
+*   **장점**:
+    *   **성능 최적화**: 외부 서비스 API 호출(네트워크 비용)이 사라져 응답 속도가 매우 빠르다.
+    *   **부담 경감**: 사용자 서비스의 DB에 부하를 주지 않는다.
+    *   **가용성 향상**: 사용자 서비스가 일시적으로 다운되어도 게시글 서비스는 정상적으로 정보를 조회할 수 있다.
+
+### 3) 비동기 이벤트를 통한 서비스 간 통신 (활동 점수 적립)
+기존 동기 방식에서는 게시글 작성 시 사용자 서비스의 API를 직접 호출하여 활동 점수를 적립했다. 이를 비동기 이벤트 방식으로 변경하여 시스템의 결합도를 낮추고 응답성을 높였다.
+
+*   **[변경 전] 동기 API 호출 (Sync)**:
+    1.  `Board Service`가 게시글을 저장한다.
+    2.  `Board Service`가 `User Service`의 활동 점수 적립 API를 호출한다 (응답 대기).
+    3.  적립이 완료되면 클라이언트에게 최종 응답을 보낸다.
+    *   **문제점**: `User Service`가 느려지거나 장애가 발생하면 게시글 작성 서비스도 함께 영향을 받는다.
+
+*   **[변경 후] 비동기 이벤트 발행 (Async)**:
+    1.  `Board Service`가 게시글을 저장하고, Kafka로 `board.created` 이벤트를 발행한다.
+    2.  발행 즉시 클라이언트에게 응답을 보낸다.
+    3.  `User Service`는 Kafka에서 이벤트를 구독하여 별도의 스레드에서 활동 점수를 적립한다.
+*   **장점**:
+    *   **빠른 응답 속도**: 사용자 서비스의 처리 완료를 기다리지 않고 즉시 응답할 수 있다.
+    *   **시스템 가용성**: 사용자 서비스가 잠시 다운되어도 이벤트는 Kafka에 보관되므로, 서비스 복구 후 나중에 처리(Retry)가 가능하다.
+    *   **관심사 분리**: 게시글 서비스는 게시글 저장이라는 자신의 본연의 업무에만 집중할 수 있다.
+
+### 4) 결과적 일관성 (Eventual Consistency)
+사용자 서비스에서 데이터가 변경된 직후, 게시글 서비스의 DB에 반영되기 전까지 아주 짧은 시간 동안 데이터가 일치하지 않을 수 있다. 하지만 Kafka를 통해 결국에는 데이터가 동기화되어 일관된 상태가 된다.
+
+---
+
+## 🚪 6. API Gateway 도입 완료
+현재 시스템은 클라이언트가 각 서비스의 주소(Port)를 직접 알고 호출해야 하는 구조에서 **Spring Cloud Gateway**를 도입하여 개선되었습니다.
+
+### ✅ API Gateway란?
+클라이언트(웹, 모바일 등)가 백엔드 API 서버에 접근하기 전에 거쳐가는 **단일 진입점(Entry Point)** 역할을 하는 서버다.
+
+### ✅ 도입 이유
+1.  **라우팅 (Routing)**: 클라이언트가 여러 서비스의 주소를 일일이 알 필요 없이 Gateway 주소 하나로 모든 요청이 가능하다.
+    *   `localhost:8084` (User), `8085` (Board), `8086` (Point) → **`localhost:8000` (Gateway)**
+2.  **공통 로직 처리 (Cross-cutting Concerns)**: 인증(JWT), 로깅, 필터링 등 여러 서비스에서 공통으로 필요한 로직을 한 곳에서 처리하여 코드 중복을 제거한다.
+
+### ✅ 인증 처리 방식 (JWT)
+본 프로젝트에서는 **Centralized Authentication** 방식을 채택하여 API Gateway에서 모든 외부 요청에 대한 인증을 처리합니다.
+
+1.  **로그인**: `User Service`에서 사용자 정보를 확인하고 JWT 토큰을 발급합니다.
+2.  **인증 필터**: `API Gateway`의 `JwtAuthenticationFilter`가 모든 `/api/**` 요청(로그인/회원가입 제외)에 대해 헤더의 JWT 토큰을 검증합니다.
+3.  **내부 통신**: 마이크로서비스 간의 내부 통신(`/internal/**`)은 신뢰할 수 있는 네트워크 내에 있다고 가정하여 별도의 인증 로직을 적용하지 않습니다.
+
+### ✅ 활용 도구
+*   **Spring Cloud Gateway**: 스프링 생태계에서 제공하는 프레임워크 기반 API Gateway로, 직접 커스텀 로직을 구현하기 용이하다.

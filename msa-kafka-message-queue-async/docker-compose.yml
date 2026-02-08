@@ -1,38 +1,38 @@
 services:
-  board-db:
+  board-db-async:
     image: mysql:8.0
-    container_name: board-db
+    container_name: board-db-async
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: board_db
+      MYSQL_DATABASE: board_db_async
     ports:
-      - "3306:3306"
+      - "3316:3306"
     volumes:
       - ./board-db/data:/var/lib/mysql
     networks:
       - msa-network
 
-  user-db:
+  user-db-async:
     image: mysql:8.0
-    container_name: user-db
+    container_name: user-db-async
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: user_db
+      MYSQL_DATABASE: user_db_async
     ports:
-      - "3307:3306"
+      - "3317:3306"
     volumes:
       - ./user-db/data:/var/lib/mysql
     networks:
       - msa-network
 
-  point-db:
+  point-db-async:
     image: mysql:8.0
-    container_name: point-db
+    container_name: point-db-async
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: point_db
+      MYSQL_DATABASE: point_db_async
     ports:
-      - "3308:3306"
+      - "3318:3306"
     volumes:
       - ./point-db/data:/var/lib/mysql
     networks:
@@ -44,10 +44,10 @@ services:
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db-async:3306/user_db_async?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       CLIENT_POINT_SERVICE_URL: http://pointservice-async:8086
     depends_on:
-      - user-db
+      - user-db-async
     networks:
       - msa-network
 
@@ -57,12 +57,12 @@ services:
     ports:
       - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://board-db:3306/board_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://board-db-async:3306/board_db_async?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       USER_SERVICE_URL: http://userservice-async:8084
       CLIENT_POINT_SERVICE_URL: http://pointservice-async:8086
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
-      - board-db
+      - board-db-async
     networks:
       - msa-network
 
@@ -72,15 +72,27 @@ services:
     ports:
       - "8086:8086"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://point-db:3306/point_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://point-db-async:3306/point_db_async?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       USER_SERVICE_URL: http://userservice-async:8084
     depends_on:
-      - point-db
+      - point-db-async
+    networks:
+      - msa-network
+
+  apigateway:
+    build: ./apigateway
+    container_name: apigateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - userservice-async
+      - boardservice-async
+      - pointservice-async
     networks:
       - msa-network
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.4.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -88,7 +100,7 @@ services:
       - msa-network
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.4.0
     depends_on:
       - zookeeper
     ports:

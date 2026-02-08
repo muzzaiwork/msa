@@ -23,7 +23,7 @@ public class PointClient {
     AddPointsRequestDto addPointsRequestDto 
         = new AddPointsRequestDto(userId, amount);
     this.restClient.post()
-        .uri("/points/add")
+        .uri("/internal/points/add")
         .contentType(MediaType.APPLICATION_JSON)
         .body(addPointsRequestDto)
         .retrieve()

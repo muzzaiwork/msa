@@ -1,5 +1,6 @@
 package com.example.boardservice.client;
 
+import com.example.boardservice.dto.AddActivityScoreRequestDto;
 import com.example.boardservice.dto.UserDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;

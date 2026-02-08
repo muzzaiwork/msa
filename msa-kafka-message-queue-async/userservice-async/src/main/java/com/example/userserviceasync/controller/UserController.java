@@ -1,15 +1,15 @@
 package com.example.userserviceasync.controller;
 
-import com.example.userserviceasync.dto.AddActivityScoreRequestDto;
+import com.example.userserviceasync.dto.LoginRequestDto;
+import com.example.userserviceasync.dto.LoginResponseDto;
 import com.example.userserviceasync.dto.SignUpRequestDto;
-import com.example.userserviceasync.dto.UserResponseDto;
 import com.example.userserviceasync.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/users")
 public class UserController {
   private final UserService userService;
 
@@ -17,33 +17,18 @@ public class UserController {
     this.userService = userService;
   }
 
-  @PostMapping("sign-up")
+  @PostMapping("/api/users/login")
+  public ResponseEntity<LoginResponseDto> login(
+      @RequestBody LoginRequestDto loginRequestDto
+  ) {
+    return ResponseEntity.ok(userService.login(loginRequestDto));
+  }
+
+  @PostMapping("/api/users/sign-up")
   public ResponseEntity<Void> signUp(
       @RequestBody SignUpRequestDto signUpRequestDto
   ) {
     userService.signUp(signUpRequestDto);
-    return ResponseEntity.noContent().build();
-  }
-
-  @GetMapping("/{userId}")
-  public ResponseEntity<UserResponseDto> findById(
-      @PathVariable Long userId
-  ) {
-    return ResponseEntity.ok(userService.findById(userId));
-  }
-
-  @GetMapping
-  public ResponseEntity<List<UserResponseDto>> findByIds(
-      @RequestParam List<Long> ids
-  ) {
-    return ResponseEntity.ok(userService.findByIds(ids));
-  }
-
-  @PostMapping("activity-score/add")
-  public ResponseEntity<Void> addActivityScore(
-      @RequestBody AddActivityScoreRequestDto addActivityScoreRequestDto
-  ) {
-    userService.addActivityScore(addActivityScoreRequestDto);
     return ResponseEntity.noContent().build();
   }
 }

@@ -94,39 +94,38 @@ public class BoardService {
 
   @Transactional(readOnly = true)
   public BoardResponseDto findById(Long boardId) {
-    Board board = this.boardRepository.findById(boardId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 존재하지 않습니다. id=" + boardId));
+    Board board = boardRepository.findById(boardId)
+        .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-    UserDto userResponse = userClient.getUser(board.getUserId()).orElse(null);
-
-    return new BoardResponseDto(
+    // BoardResponseDto 생성
+    BoardResponseDto boardResponseDto = new BoardResponseDto(
         board.getBoardId(),
         board.getTitle(),
         board.getContent(),
-        userResponse
+        new UserDto(
+            board.getUser().getUserId(),
+            board.getUser().getName()
+        )
     );
+
+    return boardResponseDto;
   }
 
   @Transactional(readOnly = true)
   public List<BoardResponseDto> findAll() {
-    List<Board> boards = this.boardRepository.findAll();
-    
-    List<Long> userIds = boards.stream()
-        .map(Board::getUserId)
-        .distinct()
-        .collect(Collectors.toList());
-
-    Map<Long, UserDto> userMap = userClient.getUsers(userIds).stream()
-        .collect(Collectors.toMap(UserDto::getUserId, Function.identity()));
+    List<Board> boards = boardRepository.findAll();
 
     return boards.stream()
         .map(board -> new BoardResponseDto(
             board.getBoardId(),
             board.getTitle(),
             board.getContent(),
-            userMap.get(board.getUserId())
+            new UserDto(
+                board.getUser().getUserId(),
+                board.getUser().getName()
+            )
         ))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   // 객체를 Json 형태의 String으로 만들어주는 메서드

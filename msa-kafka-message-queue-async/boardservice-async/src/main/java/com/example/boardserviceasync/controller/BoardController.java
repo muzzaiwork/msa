@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/boards")
+@RequestMapping("/api/boards")
 public class BoardController {
   private final BoardService boardService;
 
@@ -29,11 +29,13 @@ public class BoardController {
   public ResponseEntity<BoardResponseDto> findById(
       @PathVariable Long boardId
   ) {
-    return ResponseEntity.ok(boardService.findById(boardId));
+    BoardResponseDto boardResponseDto = boardService.findById(boardId);
+    return ResponseEntity.ok(boardResponseDto);
   }
 
   @GetMapping
   public ResponseEntity<List<BoardResponseDto>> findAll() {
-    return ResponseEntity.ok(boardService.findAll());
+    List<BoardResponseDto> boardResponseDtos = boardService.findAll();
+    return ResponseEntity.ok(boardResponseDtos);
   }
 }

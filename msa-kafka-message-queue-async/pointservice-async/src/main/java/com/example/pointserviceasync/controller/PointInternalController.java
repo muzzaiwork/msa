@@ -7,20 +7,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/points")
-public class PointController {
+public class PointInternalController {
   private final PointService pointService;
 
-  public PointController(PointService pointService) {
+  public PointInternalController(PointService pointService) {
     this.pointService = pointService;
   }
   
-  @GetMapping("{userId}")
+  @GetMapping("/internal/points/{userId}")
   public ResponseEntity<Integer> getPoint(@PathVariable Long userId) {
     return ResponseEntity.ok(pointService.getPoint(userId));
   }
   
-  @PostMapping("add")
+  @PostMapping("/internal/points/add")
   public ResponseEntity<Void> addPoints(
       @RequestBody AddPointRequestDto addPointRequestDto
   ) {
@@ -28,7 +27,7 @@ public class PointController {
     return ResponseEntity.noContent().build();
   }
   
-  @PostMapping("deduct") // deduct : 빼다
+  @PostMapping("/internal/points/deduct") // deduct : 빼다
   public ResponseEntity<Void> deductPoints(
       @RequestBody DeductPointRequestDto deductPointRequestDto
   ) {

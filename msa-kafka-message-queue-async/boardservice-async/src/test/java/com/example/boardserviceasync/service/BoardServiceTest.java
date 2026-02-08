@@ -3,6 +3,7 @@ package com.example.boardserviceasync.service;
 import com.example.boardserviceasync.client.PointClient;
 import com.example.boardserviceasync.client.UserClient;
 import com.example.boardserviceasync.domain.Board;
+import com.example.boardserviceasync.domain.User;
 import com.example.boardserviceasync.dto.BoardResponseDto;
 import com.example.boardserviceasync.dto.CreateBoardRequestDto;
 import com.example.boardserviceasync.dto.UserDto;
@@ -42,6 +43,9 @@ class BoardServiceTest {
     @Mock
     private PointClient pointClient;
 
+    @Mock
+    private org.springframework.kafka.core.KafkaTemplate<String, String> kafkaTemplate;
+
     /**
      * @InjectMocks: 위에서 생성한 @Mock 가짜 객체들을 해당 서비스 객체에 자동으로 주입해줍니다.
      * 즉, boardService가 사용하는 boardRepository를 가짜(Mock) 객체로 갈아끼워줍니다.
@@ -80,16 +84,12 @@ class BoardServiceTest {
     @DisplayName("게시글 단건 조회 테스트")
     void findByIdSuccess() throws Exception {
         // given: 테스트용 Board 객체를 생성합니다.
+        User user = new User(1L, "테스트 유저");
         Board board = new Board("제목", "내용", 1L);
         setField(board, "boardId", 1L);
+        setField(board, "user", user);
 
-        /**
-         * when(...).thenReturn(...): 스터빙(Stubbing)이라고 하며, 
-         * 가짜 객체의 특정 메서드가 호출되었을 때 반환할 값을 미리 정의합니다.
-         * 여기서는 boardRepository.findById(1L)이 호출되면 준비한 board 객체를 반환하도록 설정합니다.
-         */
         when(boardRepository.findById(1L)).thenReturn(Optional.of(board));
-        when(userClient.getUser(1L)).thenReturn(Optional.of(new UserDto(1L, "테스트 유저")));
 
         // when: 조회를 수행합니다.
         BoardResponseDto response = boardService.findById(1L);
@@ -100,20 +100,19 @@ class BoardServiceTest {
         assertEquals(1L, response.getUser().getUserId());
         assertEquals("테스트 유저", response.getUser().getName());
         verify(boardRepository, times(1)).findById(1L);
-        verify(userClient, times(1)).getUser(1L);
     }
 
     @Test
     @DisplayName("게시글 전체 조회 테스트")
     void findAllSuccess() throws Exception {
         // given: 테스트용 리스트를 준비합니다.
+        User user1 = new User(1L, "테스트 유저1");
+        User user2 = new User(2L, "테스트 유저2");
         Board board1 = new Board("제목1", "내용1", 1L);
+        setField(board1, "user", user1);
         Board board2 = new Board("제목2", "내용2", 2L);
+        setField(board2, "user", user2);
         when(boardRepository.findAll()).thenReturn(List.of(board1, board2));
-        
-        UserDto user1 = new UserDto(1L, "테스트 유저1");
-        UserDto user2 = new UserDto(2L, "테스트 유저2");
-        when(userClient.getUsers(anyList())).thenReturn(List.of(user1, user2));
 
         // when: 전체 조회를 수행합니다.
         List<BoardResponseDto> responseList = boardService.findAll();
@@ -123,7 +122,6 @@ class BoardServiceTest {
         assertEquals("테스트 유저1", responseList.get(0).getUser().getName());
         assertEquals("테스트 유저2", responseList.get(1).getUser().getName());
         verify(boardRepository, times(1)).findAll();
-        verify(userClient, times(1)).getUsers(anyList());
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

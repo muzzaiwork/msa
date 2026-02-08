@@ -66,7 +66,7 @@ class BoardControllerTest {
         doNothing().when(boardService).create(any(CreateBoardRequestDto.class));
 
         // when & then: 테스트를 실행하고 검증하는 단계
-        mockMvc.perform(post("/boards") // /boards 경로로 POST 요청을 보냄
+        mockMvc.perform(post("/api/boards") // /api/boards 경로로 POST 요청을 보냄
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))) // JSON 데이터 포함
                 .andExpect(status().isNoContent()); // 응답 상태 코드가 204 No Content인지 검증
@@ -81,7 +81,7 @@ class BoardControllerTest {
         when(boardService.findById(anyLong())).thenReturn(responseDto);
 
         // when & then: GET 요청을 보내고 결과를 검증합니다.
-        mockMvc.perform(get("/boards/1"))
+        mockMvc.perform(get("/api/boards/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("제목"))
                 .andExpect(jsonPath("$.content").value("내용"))
@@ -99,7 +99,7 @@ class BoardControllerTest {
         when(boardService.findAll()).thenReturn(List.of(responseDto1, responseDto2));
 
         // when & then: GET 요청을 보내고 리스트 크기를 검증합니다.
-        mockMvc.perform(get("/boards"))
+        mockMvc.perform(get("/api/boards"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].user.name").value("임시 유저"));

@@ -1,10 +1,10 @@
 services:
-  board-db:
+  board-db-sync:
     image: mysql:8.0
-    container_name: board-db
+    container_name: board-db-sync
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: board_db
+      MYSQL_DATABASE: board_db_sync
     ports:
       - "3306:3306"
     volumes:
@@ -12,12 +12,12 @@ services:
     networks:
       - msa-network
 
-  user-db:
+  user-db-sync:
     image: mysql:8.0
-    container_name: user-db
+    container_name: user-db-sync
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: user_db
+      MYSQL_DATABASE: user_db_sync
     ports:
       - "3307:3306"
     volumes:
@@ -25,12 +25,12 @@ services:
     networks:
       - msa-network
 
-  point-db:
+  point-db-sync:
     image: mysql:8.0
-    container_name: point-db
+    container_name: point-db-sync
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: point_db
+      MYSQL_DATABASE: point_db_sync
     ports:
       - "3308:3306"
     volumes:
@@ -44,10 +44,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db-sync:3306/user_db_sync?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       CLIENT_POINT_SERVICE_URL: http://pointservice-sync:8083
     depends_on:
-      - user-db
+      - user-db-sync
     networks:
       - msa-network
 
@@ -57,11 +57,11 @@ services:
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://board-db:3306/board_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://board-db-sync:3306/board_db_sync?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       USER_SERVICE_URL: http://userservice-sync:8081
       CLIENT_POINT_SERVICE_URL: http://pointservice-sync:8083
     depends_on:
-      - board-db
+      - board-db-sync
     networks:
       - msa-network
 
@@ -71,10 +71,10 @@ services:
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://point-db:3306/point_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://point-db-sync:3306/point_db_sync?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       USER_SERVICE_URL: http://userservice-sync:8081
     depends_on:
-      - point-db
+      - point-db-sync
     networks:
       - msa-network
 

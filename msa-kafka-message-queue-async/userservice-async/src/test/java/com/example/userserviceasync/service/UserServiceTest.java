@@ -37,12 +37,20 @@ class UserServiceTest {
     @Mock
     private PointClient pointClient;
 
+    @Mock
+    private org.springframework.kafka.core.KafkaTemplate<String, String> kafkaTemplate;
+
     /**
      * @InjectMocks: 위에서 생성한 @Mock 가짜 객체들을 해당 서비스 객체에 자동으로 주입해줍니다.
      * 즉, userService가 사용하는 userRepository를 가짜(Mock) 객체로 갈아끼워줍니다.
      */
     @InjectMocks
     private UserService userService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() throws Exception {
+        setField(userService, "jwtSecret", "c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zY3VyaXR5LWp3dC10dXRvcmlhbC1qaXdvb24K");
+    }
 
     @Test
     @DisplayName("회원가입 성공 테스트")

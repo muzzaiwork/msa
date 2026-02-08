@@ -3,6 +3,12 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/MSA.iml" filepath="$PROJECT_DIR$/MSA.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/boardservice.main.iml" filepath="$PROJECT_DIR$/.idea/modules/boardservice.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/boardservice.test.iml" filepath="$PROJECT_DIR$/.idea/modules/boardservice.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pointservice.main.iml" filepath="$PROJECT_DIR$/.idea/modules/pointservice.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pointservice.test.iml" filepath="$PROJECT_DIR$/.idea/modules/pointservice.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/userservice.main.iml" filepath="$PROJECT_DIR$/.idea/modules/userservice.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/userservice.test.iml" filepath="$PROJECT_DIR$/.idea/modules/userservice.test.iml" />
     </modules>
   </component>
 </project>

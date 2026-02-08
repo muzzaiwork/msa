@@ -5,7 +5,7 @@ spring:
   application:
     name: userservice
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/user_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3317/user_db_async?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: root
     password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -30,3 +30,7 @@ spring:
 client:
   point-service:
     url: ${CLIENT_POINT_SERVICE_URL:http://localhost:8086}
+
+jwt:
+  secret: c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zY3VyaXR5LWp3dC10dXRvcmlhbC1qaXdvb24K
+  expiration: 3600000 # 1 hour

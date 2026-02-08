@@ -30,6 +30,9 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="apigateway" options="-parameters" />
+      <module name="apigateway.main" options="-parameters" />
+      <module name="apigateway.test" options="-parameters" />
       <module name="boardservice" options="-parameters" />
       <module name="boardservice-async" options="-parameters" />
       <module name="boardservice-async.main" options="-parameters" />

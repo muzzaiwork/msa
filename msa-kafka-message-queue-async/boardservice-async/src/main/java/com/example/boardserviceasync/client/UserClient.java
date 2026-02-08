@@ -25,7 +25,7 @@ public class UserClient {
     public Optional<UserDto> getUser(Long userId) {
         try {
             UserDto userDto = restClient.get()
-                    .uri(userServiceUrl + "/users/{userId}", userId)
+                    .uri(userServiceUrl + "/internal/users/{userId}", userId)
                     .retrieve()
                     .body(UserDto.class);
             return Optional.ofNullable(userDto);
@@ -44,7 +44,7 @@ public class UserClient {
                     .collect(Collectors.joining(","));
 
             UserDto[] users = restClient.get()
-                    .uri(userServiceUrl + "/users?ids={ids}", idsParam)
+                    .uri(userServiceUrl + "/internal/users?ids={ids}", idsParam)
                     .retrieve()
                     .body(UserDto[].class);
             return users != null ? List.of(users) : Collections.emptyList();
@@ -60,7 +60,7 @@ public class UserClient {
         AddActivityScoreRequestDto addActivityScoreRequestDto
                 = new AddActivityScoreRequestDto(userId, score);
         this.restClient.post()
-                .uri(userServiceUrl + "/users/activity-score/add")
+                .uri(userServiceUrl + "/internal/users/activity-score/add")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(addActivityScoreRequestDto)
                 .retrieve()

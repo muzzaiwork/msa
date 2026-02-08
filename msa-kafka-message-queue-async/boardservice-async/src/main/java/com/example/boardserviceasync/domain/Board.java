@@ -11,10 +11,15 @@ public class Board {
   
   private String title;
   
-  private String content; 
-  
-  private Long userId; // FK 설정 안하고 그냥 컬럼으로 선언
-  
+  private String content;
+
+  @ManyToOne
+  @JoinColumn(name = "user_id", insertable = false, updatable = false) // 조회용
+  private User user;
+
+  @Column(name = "user_id")
+  private Long userId;
+
   public Board() {
   }
 
@@ -34,6 +39,10 @@ public class Board {
 
   public String getContent() {
     return content;
+  }
+
+  public User getUser() {
+    return user;
   }
 
   public Long getUserId() {

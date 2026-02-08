@@ -1,0 +1,28 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: apigateway
+  cloud:
+    gateway:
+      routes:
+        - id: userservice-async-api
+          uri: http://userservice-async:8084
+          predicates:
+            - Path=/api/users/login, /api/users/sign-up
+        - id: userservice-async-auth-api
+          uri: http://userservice-async:8084
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: boardservice-async
+          uri: http://boardservice-async:8085
+          predicates:
+            - Path=/api/boards/**
+          filters:
+            - JwtAuthenticationFilter
+
+jwt:
+  secret: c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zY3VyaXR5LWp3dC10dXRvcmlhbC1qaXdvb24K

@@ -2,6 +2,7 @@ package com.example.userservice.service;
 
 import com.example.userservice.client.PointClient;
 import com.example.userservice.domain.User;
+import com.example.userservice.dto.AddActivityScoreRequestDto;
 import com.example.userservice.dto.SignUpRequestDto;
 import com.example.userservice.dto.UserResponseDto;
 import com.example.userservice.repository.UserRepository;
