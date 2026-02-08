@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="boardservice" options="-parameters" />
+      <module name="boardservice.main" options="-parameters" />
+      <module name="boardservice.test" options="-parameters" />
+      <module name="pointservice" options="-parameters" />
+      <module name="pointservice.main" options="-parameters" />
+      <module name="pointservice.test" options="-parameters" />
+      <module name="userservice" options="-parameters" />
+      <module name="userservice.main" options="-parameters" />
+      <module name="userservice.test" options="-parameters" />
+    </option>
+  </component>
+</project>

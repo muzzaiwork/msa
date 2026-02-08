@@ -1,0 +1,16 @@
+### Board 게시글 생성 테스트
+POST http://localhost:8082/boards
+Content-Type: application/json
+
+{
+  "title": "테스트 제목",
+  "content": "테스트 내용입니다.",
+  "userId": 1
+}
+
+
+### Board 게시글 단건 조회
+GET http://localhost:8082/boards/1
+
+### Board 게시글 전체 조회
+GET http://localhost:8082/boards
