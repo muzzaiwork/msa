@@ -20,6 +20,9 @@
 본 프로젝트는 Kafka를 중심으로 메시지를 발행(Publish)하고 구독(Subscribe)하는 구조로 설계되었다.
 
 ### 🏗️ 시스템 아키텍처
+<details>
+<summary>아키텍처 다이어그램 보기</summary>
+
 ```plantuml
 @startuml
 !theme plain
@@ -31,41 +34,51 @@ package "External" {
 
 package "API Gateway" {
     [Spring Cloud Gateway (Port: 8000)] as Gateway
+    component "JwtAuthenticationFilter" as AuthFilter
 }
 
 package "Message Broker" {
     component "Kafka" as Kafka
 }
 
-package "MSA Network" {
-    package "Board Service (Async) (Port: 8085)" {
+package "MSA Network (Internal)" {
+    package "Board Service (Port: 8085)" {
         component "Board Controller" as BS
-        component "Board Service (Async)" as BService
+        component "Board Service" as BService
+        component "UserEvent Consumer" as BEC
         database "Board DB" as BDB
     }
 
-    package "User Service (Async) (Port: 8084)" {
+    package "User Service (Port: 8084)" {
         component "User Controller" as US
-        component "User Service (Async)" as UService
+        component "User Internal Controller" as UIC
+        component "User Service" as UService
+        component "BoardCreated Consumer" as UCC
         database "User DB" as UDB
     }
 
-    package "Point Service (Async) (Port: 8086)" {
-        component "Point Controller" as PS
-        component "Point Service (Async)" as PService
+    package "Point Service (Port: 8086)" {
+        component "Point Internal Controller" as PS
+        component "Point Service" as PService
+        component "BoardCreated Consumer" as PCC
         database "Point DB" as PDB
     }
 }
 
-Client -> Gateway
-Gateway -> BS
-Gateway -> US
-Gateway -> PS
-BService -[bold]-> Kafka : Publish: BoardCreated
-Kafka -[bold]-> PService : Subscribe: BoardCreated
-Kafka -[bold]-> UService : Subscribe: BoardCreated
+Client -> Gateway : [External API] /api/**
+Gateway -> AuthFilter : Validate JWT
+AuthFilter -> BS : Forward with X-User-Id
+AuthFilter -> US : Forward with X-User-Id
+
+BS -[bold]-> Kafka : Publish: board.created
+Kafka -[bold]-> PCC : Subscribe: board.created (Deduct Point)
+Kafka -[bold]-> UCC : Subscribe: board.created (Add Activity Score)
+
+US -[bold]-> Kafka : Publish: user.signed-up
+Kafka -[bold]-> BEC : Subscribe: user.signed-up (Replicate User)
 @enduml
 ```
+</details>
 
 ### 🛠 Tech Stack
 | Category | Technology |
@@ -79,9 +92,101 @@ Kafka -[bold]-> UService : Subscribe: BoardCreated
 ---
 
 ## 🔄 2. 비즈니스 로직 흐름 (Choreography SAGA)
-1. **게시글 작성**: `Board Service (Async)`에서 게시글을 DB에 저장하고 `BoardCreated` 이벤트를 Kafka `board-topic`에 발행한다.
-2. **포인트 차감**: `Point Service (Async)`가 이벤트를 수신하여 사용자의 포인트를 차감한다.
-3. **활동 점수 적립**: `User Service (Async)`가 이벤트를 수신하여 사용자의 활동 점수를 적립한다.
+
+### 1) 회원가입 및 데이터 복제 (User Signup & Data Replication)
+사용자가 회원가입을 하면 `User Service`는 이를 처리하고 이벤트를 발행하며, `Board Service`는 이를 구독하여 데이터를 복제한다.
+
+![img.png](img.png)
+
+<details>
+<summary>시퀀스 다이어그램 보기</summary>
+
+```plantuml
+@startuml
+actor "사용자" as Client
+participant "API 게이트웨이" as Gateway
+participant "사용자 서비스" as User
+participant "포인트 서비스" as Point
+database "사용자 DB" as UDB
+queue "카프카 (user.signed-up)" as Kafka
+participant "게시글 서비스" as Board
+database "게시글 DB (users 테이블)" as BDB
+
+Client -> Gateway : 회원가입 요청 (POST /api/users/sign-up)
+Gateway -> User : 요청 전달
+User -> UDB : 사용자 정보 저장
+User -> Point : [동기] 포인트 적립 호출 (REST: 1000P)
+User -> Kafka : 이벤트 발행: user.signed-up (userId, name)
+User -> Gateway : 204 No Content 응답
+Gateway -> Client : 성공 응답
+
+note over Board: 컨슈머: UserEventConsumer
+Kafka -> Board : 이벤트 구독
+Board -> BDB : 사용자 데이터 저장/동기화 (복제)
+@enduml
+```
+</details>
+
+### 2) 게시글 작성 및 비동기 처리 (Board Creation & Async Processing)
+게시글을 작성하면 `Board Service`는 최소한의 작업(DB 저장) 후 이벤트를 발행하고, 나머지 작업(포인트 차감, 활동 점수 적립)은 타 서비스에서 비동기로 처리한다.
+
+![img_2.png](img_2.png)
+
+<details>
+<summary>시퀀스 다이어그램 보기</summary>
+
+```plantuml
+@startuml
+actor "사용자" as Client
+participant "API 게이트웨이" as Gateway
+participant "게시글 서비스" as Board
+database "게시글 DB" as BDB
+queue "카프카 (board.created)" as Kafka
+participant "포인트 서비스" as Point
+participant "사용자 서비스" as User
+
+Client -> Gateway : 게시글 작성 요청 (POST /api/boards, JWT 포함)
+Gateway -> Gateway : JwtAuthenticationFilter\n(userId 추출)
+Gateway -> Board : X-User-Id 헤더 포함 전달
+Board -> BDB : 게시글 정보 저장
+Board -> Kafka : 이벤트 발행: board.created (userId)
+Board -> Gateway : 204 No Content 응답
+Gateway -> Client : 성공 응답
+
+par [비동기 처리]
+    Kafka -> Point : 이벤트 구독
+    Point -> Point : 포인트 차감 (100P)
+    
+    Kafka -> User : 이벤트 구독
+    User -> User : 활동 점수 적립 (10점)
+end
+@enduml
+```
+</details>
+
+### 3) 게시글 조회 (Query with Replicated Data)
+게시글 조회 시 타 서비스 호출 없이 로컬에 복제된 데이터를 사용하여 성능을 최적화한다.
+
+![img_1.png](img_1.png)
+
+<details>
+<summary>시퀀스 다이어그램 보기</summary>
+
+```plantuml
+@startuml
+actor "사용자" as Client
+participant "API 게이트웨이" as Gateway
+participant "게시글 서비스" as Board
+database "게시글 DB" as BDB
+
+Client -> Gateway : 전체 게시글 조회 (GET /api/boards)
+Gateway -> Board : 요청 전달
+Board -> BDB : 게시글 & 사용자 조인 조회 (복제된 데이터)
+Board -> Gateway : 사용자 이름 포함 목록 반환
+Gateway -> Client : 응답 반환
+@enduml
+```
+</details>
 
 ---
 
@@ -135,23 +240,13 @@ docker-compose up -d --build
     *   **부담 경감**: 사용자 서비스의 DB에 부하를 주지 않는다.
     *   **가용성 향상**: 사용자 서비스가 일시적으로 다운되어도 게시글 서비스는 정상적으로 정보를 조회할 수 있다.
 
-### 3) 비동기 이벤트를 통한 서비스 간 통신 (활동 점수 적립)
-기존 동기 방식에서는 게시글 작성 시 사용자 서비스의 API를 직접 호출하여 활동 점수를 적립했다. 이를 비동기 이벤트 방식으로 변경하여 시스템의 결합도를 낮추고 응답성을 높였다.
+### 2) 서비스 간 결합도 해소 (Loose Coupling)
+기존 동기 방식에서는 `Board Service`가 `Point Service`와 `User Service`의 API를 직접 호출해야 했다. 이는 한 서비스의 장애가 다른 서비스로 전파되는 '계단식 장애(Cascading Failure)'의 원인이 된다.
 
-*   **[변경 전] 동기 API 호출 (Sync)**:
-    1.  `Board Service`가 게시글을 저장한다.
-    2.  `Board Service`가 `User Service`의 활동 점수 적립 API를 호출한다 (응답 대기).
-    3.  적립이 완료되면 클라이언트에게 최종 응답을 보낸다.
-    *   **문제점**: `User Service`가 느려지거나 장애가 발생하면 게시글 작성 서비스도 함께 영향을 받는다.
-
-*   **[변경 후] 비동기 이벤트 발행 (Async)**:
-    1.  `Board Service`가 게시글을 저장하고, Kafka로 `board.created` 이벤트를 발행한다.
-    2.  발행 즉시 클라이언트에게 응답을 보낸다.
-    3.  `User Service`는 Kafka에서 이벤트를 구독하여 별도의 스레드에서 활동 점수를 적립한다.
-*   **장점**:
-    *   **빠른 응답 속도**: 사용자 서비스의 처리 완료를 기다리지 않고 즉시 응답할 수 있다.
-    *   **시스템 가용성**: 사용자 서비스가 잠시 다운되어도 이벤트는 Kafka에 보관되므로, 서비스 복구 후 나중에 처리(Retry)가 가능하다.
-    *   **관심사 분리**: 게시글 서비스는 게시글 저장이라는 자신의 본연의 업무에만 집중할 수 있다.
+*   **[개선 방식] 이벤트 기반 통신**:
+    *   `Board Service`는 단순히 "게시글이 생성됨"이라는 사실(Event)만 알린다.
+    *   이를 누가 가져다 쓸지는 `Board Service`의 관심사가 아니다.
+    *   덕분에 새로운 기능(예: 게시글 작성 시 알림 발송)이 추가되어도 `Board Service`의 코드는 수정할 필요가 없다.
 
 ### 4) 결과적 일관성 (Eventual Consistency)
 사용자 서비스에서 데이터가 변경된 직후, 게시글 서비스의 DB에 반영되기 전까지 아주 짧은 시간 동안 데이터가 일치하지 않을 수 있다. 하지만 Kafka를 통해 결국에는 데이터가 동기화되어 일관된 상태가 된다.
