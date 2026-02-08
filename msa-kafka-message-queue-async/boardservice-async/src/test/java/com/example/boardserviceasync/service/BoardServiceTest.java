@@ -60,14 +60,14 @@ class BoardServiceTest {
         CreateBoardRequestDto requestDto = new CreateBoardRequestDto();
         setField(requestDto, "title", "테스트 제목");
         setField(requestDto, "content", "테스트 내용");
-        setField(requestDto, "userId", 1L);
+        Long userId = 1L;
 
-        Board savedBoard = new Board("테스트 제목", "테스트 내용", 1L);
+        Board savedBoard = new Board("테스트 제목", "테스트 내용", userId);
         setField(savedBoard, "boardId", 1L);
         when(boardRepository.save(any(Board.class))).thenReturn(savedBoard);
 
         // when: 실제 기능을 실행합니다.
-        boardService.create(requestDto);
+        boardService.create(userId, requestDto);
 
         /**
          * then: 실행 결과를 검증합니다.
@@ -75,9 +75,9 @@ class BoardServiceTest {
          * boardRepository의 save() 메서드가 최소 1번(times(1)) 호출되었는지 확인합니다.
          * 실제 DB에 저장되지는 않지만, 로직 흐름상 저장을 시도했는지를 가짜 객체(Mock)를 통해 검증하는 것입니다.
          */
-        verify(pointClient, times(1)).deductPoints(1L, 100);
+        verify(pointClient, times(1)).deductPoints(userId, 100);
         verify(boardRepository, times(1)).save(any(Board.class));
-        verify(userClient, times(1)).addActivityScore(1L, 10);
+        verify(userClient, times(1)).addActivityScore(userId, 10);
     }
 
     @Test

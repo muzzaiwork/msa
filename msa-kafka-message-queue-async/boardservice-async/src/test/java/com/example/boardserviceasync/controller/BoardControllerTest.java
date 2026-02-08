@@ -56,17 +56,17 @@ class BoardControllerTest {
         CreateBoardRequestDto requestDto = new CreateBoardRequestDto();
         setField(requestDto, "title", "테스트 제목");
         setField(requestDto, "content", "테스트 내용");
-        setField(requestDto, "userId", 1L);
 
         /**
          * doNothing().when(boardService).create(...):
          * boardService.create() 메서드가 호출될 때 아무런 동작도 하지 않도록 설정(Stubbing)합니다.
          * 실제 서비스 로직을 실행하지 않고, 호출되었다는 사실만 확인하거나 에러가 발생하지 않음을 보장합니다.
          */
-        doNothing().when(boardService).create(any(CreateBoardRequestDto.class));
+        doNothing().when(boardService).create(anyLong(), any(CreateBoardRequestDto.class));
 
         // when & then: 테스트를 실행하고 검증하는 단계
         mockMvc.perform(post("/api/boards") // /api/boards 경로로 POST 요청을 보냄
+                        .header("X-User-Id", 1L) // X-User-Id 헤더 추가
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))) // JSON 데이터 포함
                 .andExpect(status().isNoContent()); // 응답 상태 코드가 204 No Content인지 검증
