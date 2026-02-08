@@ -28,54 +28,54 @@
 !theme plain
 skinparam componentStyle rectangle
 
-package "External" {
-    [Client / Browser] as Client
+package "외부 영역 (External)" {
+    [클라이언트 / 브라우저] as Client
 }
 
-package "API Gateway" {
-    [Spring Cloud Gateway (Port: 8000)] as Gateway
-    component "JwtAuthenticationFilter" as AuthFilter
+package "API 게이트웨이" {
+    [Spring Cloud Gateway (포트: 8000)] as Gateway
+    component "JwtAuthenticationFilter\n(인증 필터)" as AuthFilter
 }
 
-package "Message Broker" {
-    component "Kafka" as Kafka
+package "메시지 브로커" {
+    component "Kafka (카프카)" as Kafka
 }
 
-package "MSA Network (Internal)" {
-    package "Board Service (Port: 8085)" {
-        component "Board Controller" as BS
-        component "Board Service" as BService
-        component "UserEvent Consumer" as BEC
-        database "Board DB" as BDB
+package "MSA 내부 네트워크 (Internal)" {
+    package "게시글 서비스 (포트: 8085)" {
+        component "게시글 컨트롤러" as BS
+        component "게시글 서비스" as BService
+        component "사용자 이벤트 컨슈머" as BEC
+        database "게시글 DB" as BDB
     }
 
-    package "User Service (Port: 8084)" {
-        component "User Controller" as US
-        component "User Internal Controller" as UIC
-        component "User Service" as UService
-        component "BoardCreated Consumer" as UCC
-        database "User DB" as UDB
+    package "사용자 서비스 (포트: 8084)" {
+        component "사용자 컨트롤러" as US
+        component "사용자 내부 컨트롤러" as UIC
+        component "사용자 서비스" as UService
+        component "게시글 생성 컨슈머" as UCC
+        database "사용자 DB" as UDB
     }
 
-    package "Point Service (Port: 8086)" {
-        component "Point Internal Controller" as PS
-        component "Point Service" as PService
-        component "BoardCreated Consumer" as PCC
-        database "Point DB" as PDB
+    package "포인트 서비스 (포트: 8086)" {
+        component "포인트 내부 컨트롤러" as PS
+        component "포인트 서비스" as PService
+        component "게시글 생성 컨슈머" as PCC
+        database "포인트 DB" as PDB
     }
 }
 
-Client -> Gateway : [External API] /api/**
-Gateway -> AuthFilter : Validate JWT
-AuthFilter -> BS : Forward with X-User-Id
-AuthFilter -> US : Forward with X-User-Id
+Client -> Gateway : [외부 API 요청] /api/**
+Gateway -> AuthFilter : JWT 토큰 검증
+AuthFilter -> BS : X-User-Id 헤더와 함께 전달
+AuthFilter -> US : X-User-Id 헤더와 함께 전달
 
-BS -[bold]-> Kafka : Publish: board.created
-Kafka -[bold]-> PCC : Subscribe: board.created (Deduct Point)
-Kafka -[bold]-> UCC : Subscribe: board.created (Add Activity Score)
+BS -[bold]-> Kafka : 이벤트 발행: board.created
+Kafka -[bold]-> PCC : 이벤트 구독: board.created (포인트 차감)
+Kafka -[bold]-> UCC : 이벤트 구독: board.created (활동 점수 적립)
 
-US -[bold]-> Kafka : Publish: user.signed-up
-Kafka -[bold]-> BEC : Subscribe: user.signed-up (Replicate User)
+US -[bold]-> Kafka : 이벤트 발행: user.signed-up
+Kafka -[bold]-> BEC : 이벤트 구독: user.signed-up (사용자 데이터 복제)
 @enduml
 ```
 </details>
