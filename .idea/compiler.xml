@@ -1,14 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="boardservice" target="21" />
+      <module name="boardservice.main" target="21" />
+      <module name="boardservice.test" target="21" />
+      <module name="com.example.boardservice" target="21" />
+      <module name="com.example.boardservice.main" target="21" />
+      <module name="com.example.boardservice.test" target="21" />
+      <module name="com.example.boardservice.test~1" target="21" />
+      <module name="com.example.pointservice" target="21" />
+      <module name="com.example.pointservice.main" target="21" />
+      <module name="com.example.pointservice.test" target="21" />
+      <module name="com.example.userservice" target="21" />
+      <module name="com.example.userservice.main" target="21" />
+      <module name="com.example.userservice.test" target="21" />
+      <module name="com.example.userservice.test~1" target="21" />
+      <module name="pointservice" target="21" />
+      <module name="pointservice-sync.pointservice.main" target="21" />
+      <module name="pointservice-sync.pointservice.test" target="21" />
+      <module name="pointservice.main" target="21" />
+      <module name="pointservice.test" target="21" />
+      <module name="userservice" target="21" />
+      <module name="userservice-sync.userservice.main" target="21" />
+      <module name="userservice-sync.userservice.test" target="21" />
+      <module name="userservice.main" target="21" />
+      <module name="userservice.test" target="21" />
+    </bytecodeTargetLevel>
+  </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="boardservice" options="-parameters" />
+      <module name="boardservice-async" options="-parameters" />
+      <module name="boardservice-async.main" options="-parameters" />
+      <module name="boardservice-async.test" options="-parameters" />
+      <module name="boardservice-sync" options="-parameters" />
+      <module name="boardservice-sync.main" options="-parameters" />
+      <module name="boardservice-sync.test" options="-parameters" />
       <module name="boardservice.main" options="-parameters" />
       <module name="boardservice.test" options="-parameters" />
+      <module name="com.example.boardservice" options="-parameters" />
+      <module name="com.example.boardservice.main" options="-parameters" />
+      <module name="com.example.boardservice.test" options="-parameters" />
+      <module name="com.example.boardservice.test~1" options="-parameters" />
+      <module name="com.example.pointservice" options="-parameters" />
+      <module name="com.example.pointservice.main" options="-parameters" />
+      <module name="com.example.pointservice.test" options="-parameters" />
+      <module name="com.example.userservice" options="-parameters" />
+      <module name="com.example.userservice.main" options="-parameters" />
+      <module name="com.example.userservice.test" options="-parameters" />
+      <module name="com.example.userservice.test~1" options="-parameters" />
       <module name="pointservice" options="-parameters" />
+      <module name="pointservice-async" options="-parameters" />
+      <module name="pointservice-async.main" options="-parameters" />
+      <module name="pointservice-async.test" options="-parameters" />
+      <module name="pointservice-sync" options="-parameters" />
+      <module name="pointservice-sync.main" options="-parameters" />
+      <module name="pointservice-sync.pointservice.main" options="-parameters" />
+      <module name="pointservice-sync.pointservice.test" options="-parameters" />
+      <module name="pointservice-sync.test" options="-parameters" />
       <module name="pointservice.main" options="-parameters" />
       <module name="pointservice.test" options="-parameters" />
       <module name="userservice" options="-parameters" />
+      <module name="userservice-async" options="-parameters" />
+      <module name="userservice-async.main" options="-parameters" />
+      <module name="userservice-async.test" options="-parameters" />
+      <module name="userservice-sync" options="-parameters" />
+      <module name="userservice-sync.main" options="-parameters" />
+      <module name="userservice-sync.test" options="-parameters" />
+      <module name="userservice-sync.userservice.main" options="-parameters" />
+      <module name="userservice-sync.userservice.test" options="-parameters" />
       <module name="userservice.main" options="-parameters" />
       <module name="userservice.test" options="-parameters" />
     </option>

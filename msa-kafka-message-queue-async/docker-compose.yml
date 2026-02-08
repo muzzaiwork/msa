@@ -1,0 +1,108 @@
+services:
+  board-db:
+    image: mysql:8.0
+    container_name: board-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: board_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./board-db/data:/var/lib/mysql
+    networks:
+      - msa-network
+
+  user-db:
+    image: mysql:8.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: user_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./user-db/data:/var/lib/mysql
+    networks:
+      - msa-network
+
+  point-db:
+    image: mysql:8.0
+    container_name: point-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: point_db
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./point-db/data:/var/lib/mysql
+    networks:
+      - msa-network
+
+  userservice-async:
+    build: ./userservice-async
+    container_name: userservice-async
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      CLIENT_POINT_SERVICE_URL: http://pointservice-async:8086
+    depends_on:
+      - user-db
+    networks:
+      - msa-network
+
+  boardservice-async:
+    build: ./boardservice-async
+    container_name: boardservice-async
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://board-db:3306/board_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      USER_SERVICE_URL: http://userservice-async:8084
+      CLIENT_POINT_SERVICE_URL: http://pointservice-async:8086
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - board-db
+    networks:
+      - msa-network
+
+  pointservice-async:
+    build: ./pointservice-async
+    container_name: pointservice-async
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://point-db:3306/point_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      USER_SERVICE_URL: http://userservice-async:8084
+    depends_on:
+      - point-db
+    networks:
+      - msa-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - msa-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - msa-network
+
+networks:
+  msa-network:
+    driver: bridge

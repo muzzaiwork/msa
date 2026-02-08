@@ -1,0 +1,24 @@
+### User 회원가입 테스트
+POST http://localhost:8081/users/sign-up
+Content-Type: application/json
+
+{
+  "email": "yonkum@naver.com",
+  "name": "김원겸",
+  "password": "password123"
+}
+
+### User 유저 정보 조회
+GET http://localhost:8081/users/1
+
+### User 유저 정보 벌크 조회
+GET http://localhost:8081/users?ids=1,2,3,4,5,6
+
+### User 활동 점수 적립
+POST http://localhost:8081/users/activity-score/add
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "score": 10
+}

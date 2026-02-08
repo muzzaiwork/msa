@@ -1,0 +1,20 @@
+### Point 포인트 조회
+GET http://localhost:8083/points/1
+
+### Point 포인트 적립
+POST http://localhost:8083/points/add
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "amount": 100
+}
+
+### Point 포인트 차감
+POST http://localhost:8083/points/deduct
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "amount": 50
+}

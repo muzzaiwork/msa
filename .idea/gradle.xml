@@ -1,31 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/boardservice" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-kafka-message-queue-async/boardservice-async" />
         <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$/boardservice" />
+            <option value="$PROJECT_DIR$/msa-kafka-message-queue-async/boardservice-async" />
           </set>
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/pointservice" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-kafka-message-queue-async/pointservice-async" />
         <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$/pointservice" />
+            <option value="$PROJECT_DIR$/msa-kafka-message-queue-async/pointservice-async" />
           </set>
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/userservice" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-kafka-message-queue-async/userservice-async" />
         <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$/userservice" />
+            <option value="$PROJECT_DIR$/msa-kafka-message-queue-async/userservice-async" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-rest-api-sync/boardservice-sync" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/msa-rest-api-sync/boardservice-sync" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-rest-api-sync/pointservice-sync" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/msa-rest-api-sync/pointservice-sync" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/msa-rest-api-sync/userservice-sync" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/msa-rest-api-sync/userservice-sync" />
           </set>
         </option>
       </GradleProjectSettings>

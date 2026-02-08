@@ -70,3 +70,11 @@ Icon
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# Database data
+**/board-db/data
+**/user-db/data
+**/point-db/data
+**/msa-rest-api-sync/board-db/data
+**/msa-rest-api-sync/user-db/data
+**/msa-rest-api-sync/point-db/data

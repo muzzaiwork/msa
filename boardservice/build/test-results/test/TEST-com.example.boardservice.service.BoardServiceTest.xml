@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.example.boardservice.service.BoardServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-08T02:53:37.093Z" hostname="wonui-MacBookPro.local" time="0.085">
-  <properties/>
-  <testcase name="게시글 단건 조회 테스트" classname="com.example.boardservice.service.BoardServiceTest" time="0.082"/>
-  <testcase name="게시글 전체 조회 테스트" classname="com.example.boardservice.service.BoardServiceTest" time="0.001"/>
-  <testcase name="게시글 생성 성공 테스트" classname="com.example.boardservice.service.BoardServiceTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
