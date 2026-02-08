@@ -21,6 +21,8 @@
 
 본 프로젝트는 세 개의 독립적인 마이크로서비스로 구성되어 있으며, 각 서비스는 자체 데이터베이스를 가지고 있다.
 
+### 시스템 구조
+
 - **UserService (포트: 8081)**: 사용자 관리 및 활동 점수(Activity Score) 적립 담당.
 - **BoardService (포트: 8082)**: 게시글 작성, 조회 및 전체 비즈니스 로직 조율(Saga Orchestrator 역할) 담당.
 - **PointService (포트: 8083)**: 사용자 포인트 차감 및 적립 담당.
@@ -62,6 +64,42 @@
 ### 적용된 사가 패턴 로직 (`BoardService.java`)
 
 주석과 함께 코드를 살펴보면 각 단계가 어떻게 진행되고, 실패 시 어떻게 복구되는지 명확히 이해할 수 있다.
+
+#### SAGA 시퀀스 다이어그램 (Orchestration)
+
+```plantuml
+@startuml
+actor Client as C
+participant "Board Service" as B
+participant "Point Service" as P
+participant "User Service" as U
+
+C -> B : 게시글 작성 요청 (POST /boards)
+
+group #F0F0F0 정상 흐름 - Happy Path
+    B -> P : 1단계: 포인트 차감 (100pt)
+    P --> B : 차감 완료
+    
+    B -> B : 2단계: 게시글 저장 (Local DB)
+    
+    B -> U : 3단계: 활동 점수 적립 (10pt)
+    U --> B : 적립 완료
+    B --> C : 작성 성공 응답
+end
+
+group #FFE6E6 실패 및 보상 트랜잭션 - Compensation
+    B -> P : 1단계: 포인트 차감 (성공)
+    B -> B : 2단계: 게시글 저장 (성공)
+    B -> U : 3단계: 활동 점수 적립 (실패 발생!)
+    U --x B : Error!
+    
+    note right B: 보상 트랜잭션 시작
+    B -> B : 2단계 취소: 게시글 삭제
+    B -> P : 1단계 취소: 포인트 원복 (100pt 적립)
+    B --> C : 작성 실패 응답 (500 Error)
+end
+@enduml
+```
 
 ```java
 @Transactional
