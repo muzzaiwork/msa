@@ -66,7 +66,7 @@
 주석과 함께 코드를 살펴보면 각 단계가 어떻게 진행되고, 실패 시 어떻게 복구되는지 명확히 이해할 수 있다.
 
 #### SAGA 시퀀스 다이어그램 (Orchestration)
-
+![img.png](img.png)
 ```plantuml
 @startuml
 actor Client as C
