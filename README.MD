@@ -67,6 +67,10 @@
 
 #### SAGA 시퀀스 다이어그램 (Orchestration)
 ![img.png](img.png)
+
+<details>
+<summary>시퀀스 다이어그램 소스 (PlantUML)</summary>
+
 ```plantuml
 @startuml
 actor Client as C
@@ -100,6 +104,8 @@ group #FFE6E6 실패 및 보상 트랜잭션 - Compensation
 end
 @enduml
 ```
+
+</details>
 
 ```java
 @Transactional
