@@ -67,9 +67,9 @@ graph TD
         end
     end
 
-    Client --> BS
-    BService == "1. deductPoints" ==> PService
-    BService == "3. addActivityScore" ==> UService
+    Client -- "게시글 작성 요청" --> BS
+    BService -- "1. 포인트 차감 (deductPoints)" --> PService
+    BService -- "3. 활동 점수 적립 (addActivityScore)" --> UService
 ```
 
 ### 🛠 Tech Stack

@@ -62,17 +62,17 @@ graph TD
         end
     end
 
-    Client --> Gateway
-    Gateway --> AuthFilter
-    AuthFilter --> BS
-    AuthFilter --> US
+    Client -- "외부 API 요청 (/api/**)" --> Gateway
+    Gateway -- "JWT 검증" --> AuthFilter
+    AuthFilter -- "인증 정보 전달 (X-User-Id)" --> BS
+    AuthFilter -- "인증 정보 전달 (X-User-Id)" --> US
 
-    BS == "이벤트 발행: board.created" ==> Kafka
-    Kafka == "이벤트 구독: board.created (포인트 차감)" ==> PCC
-    Kafka == "이벤트 구독: board.created (활동 점수 적립)" ==> UCC
+    BS -- "이벤트 발행: board.created" --> Kafka
+    Kafka -- "이벤트 구독: board.created (포인트 차감)" --> PCC
+    Kafka -- "이벤트 구독: board.created (활동 점수 적립)" --> UCC
 
-    US == "이벤트 발행: user.signed-up" ==> Kafka
-    Kafka == "이벤트 구독: user.signed-up (사용자 데이터 복제)" ==> BEC
+    US -- "이벤트 발행: user.signed-up" --> Kafka
+    Kafka -- "이벤트 구독: user.signed-up (사용자 데이터 복제)" --> BEC
 ```
 </details>
 
