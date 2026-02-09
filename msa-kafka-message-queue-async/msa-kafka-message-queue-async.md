@@ -23,60 +23,56 @@
 <details>
 <summary>아키텍처 다이어그램 보기</summary>
 
-```plantuml
-@startuml
-!theme plain
-skinparam componentStyle rectangle
+```mermaid
+graph TD
+    subgraph External ["외부 영역 (External)"]
+        Client["클라이언트 / 브라우저"]
+    end
 
-package "외부 영역 (External)" {
-    [클라이언트 / 브라우저] as Client
-}
+    subgraph Gateway_Pkg ["API 게이트웨이"]
+        Gateway["Spring Cloud Gateway (포트: 8000)"]
+        AuthFilter["JwtAuthenticationFilter (인증 필터)"]
+    end
 
-package "API 게이트웨이" {
-    [Spring Cloud Gateway (포트: 8000)] as Gateway
-    component "JwtAuthenticationFilter\n(인증 필터)" as AuthFilter
-}
+    subgraph Broker ["메시지 브로커"]
+        Kafka["Kafka (카프카)"]
+    end
 
-package "메시지 브로커" {
-    component "Kafka (카프카)" as Kafka
-}
+    subgraph Internal ["MSA 내부 네트워크 (Internal)"]
+        subgraph Board_Service ["게시글 서비스 (포트: 8085)"]
+            BS["게시글 컨트롤러"]
+            BService["게시글 서비스"]
+            BEC["사용자 이벤트 컨슈머"]
+            BDB[("게시글 DB")]
+        end
 
-package "MSA 내부 네트워크 (Internal)" {
-    package "게시글 서비스 (포트: 8085)" {
-        component "게시글 컨트롤러" as BS
-        component "게시글 서비스" as BService
-        component "사용자 이벤트 컨슈머" as BEC
-        database "게시글 DB" as BDB
-    }
+        subgraph User_Service ["사용자 서비스 (포트: 8084)"]
+            US["사용자 컨트롤러"]
+            UIC["사용자 내부 컨트롤러"]
+            UService["사용자 서비스"]
+            UCC["게시글 생성 컨슈머"]
+            UDB[("사용자 DB")]
+        end
 
-    package "사용자 서비스 (포트: 8084)" {
-        component "사용자 컨트롤러" as US
-        component "사용자 내부 컨트롤러" as UIC
-        component "사용자 서비스" as UService
-        component "게시글 생성 컨슈머" as UCC
-        database "사용자 DB" as UDB
-    }
+        subgraph Point_Service ["포인트 서비스 (포트: 8086)"]
+            PS["포인트 내부 컨트롤러"]
+            PService["포인트 서비스"]
+            PCC["게시글 생성 컨슈머"]
+            PDB[("포인트 DB")]
+        end
+    end
 
-    package "포인트 서비스 (포트: 8086)" {
-        component "포인트 내부 컨트롤러" as PS
-        component "포인트 서비스" as PService
-        component "게시글 생성 컨슈머" as PCC
-        database "포인트 DB" as PDB
-    }
-}
+    Client --> Gateway
+    Gateway --> AuthFilter
+    AuthFilter --> BS
+    AuthFilter --> US
 
-Client -> Gateway : [외부 API 요청] /api/**
-Gateway -> AuthFilter : JWT 토큰 검증
-AuthFilter -> BS : X-User-Id 헤더와 함께 전달
-AuthFilter -> US : X-User-Id 헤더와 함께 전달
+    BS == "이벤트 발행: board.created" ==> Kafka
+    Kafka == "이벤트 구독: board.created (포인트 차감)" ==> PCC
+    Kafka == "이벤트 구독: board.created (활동 점수 적립)" ==> UCC
 
-BS -[bold]-> Kafka : 이벤트 발행: board.created
-Kafka -[bold]-> PCC : 이벤트 구독: board.created (포인트 차감)
-Kafka -[bold]-> UCC : 이벤트 구독: board.created (활동 점수 적립)
-
-US -[bold]-> Kafka : 이벤트 발행: user.signed-up
-Kafka -[bold]-> BEC : 이벤트 구독: user.signed-up (사용자 데이터 복제)
-@enduml
+    US == "이벤트 발행: user.signed-up" ==> Kafka
+    Kafka == "이벤트 구독: user.signed-up (사용자 데이터 복제)" ==> BEC
 ```
 </details>
 
@@ -101,29 +97,28 @@ Kafka -[bold]-> BEC : 이벤트 구독: user.signed-up (사용자 데이터 복�
 <details>
 <summary>시퀀스 다이어그램 보기</summary>
 
-```plantuml
-@startuml
-actor "사용자" as Client
-participant "API 게이트웨이" as Gateway
-participant "사용자 서비스" as User
-participant "포인트 서비스" as Point
-database "사용자 DB" as UDB
-queue "카프카 (user.signed-up)" as Kafka
-participant "게시글 서비스" as Board
-database "게시글 DB (users 테이블)" as BDB
+```mermaid
+sequenceDiagram
+    actor Client as 사용자
+    participant Gateway as API 게이트웨이
+    participant User as 사용자 서비스
+    participant Point as 포인트 서비스
+    participant UDB as 사용자 DB
+    participant Kafka as 카프카 (user.signed-up)
+    participant Board as 게시글 서비스
+    participant BDB as 게시글 DB (users 테이블)
 
-Client -> Gateway : 회원가입 요청 (POST /api/users/sign-up)
-Gateway -> User : 요청 전달
-User -> UDB : 사용자 정보 저장
-User -> Point : [동기] 포인트 적립 호출 (REST: 1000P)
-User -> Kafka : 이벤트 발행: user.signed-up (userId, name)
-User -> Gateway : 204 No Content 응답
-Gateway -> Client : 성공 응답
+    Client->>Gateway: 회원가입 요청 (POST /api/users/sign-up)
+    Gateway->>User: 요청 전달
+    User->>UDB: 사용자 정보 저장
+    User->>Point: [동기] 포인트 적립 호출 (REST: 1000P)
+    User->>Kafka: 이벤트 발행: user.signed-up (userId, name)
+    User->>Gateway: 204 No Content 응답
+    Gateway->>Client: 성공 응답
 
-note over Board: 컨슈머: UserEventConsumer
-Kafka -> Board : 이벤트 구독
-Board -> BDB : 사용자 데이터 저장/동기화 (복제)
-@enduml
+    Note over Board: 컨슈머: UserEventConsumer
+    Kafka->>Board: 이벤트 구독
+    Board->>BDB: 사용자 데이터 저장/동기화 (복제)
 ```
 </details>
 
@@ -135,32 +130,34 @@ Board -> BDB : 사용자 데이터 저장/동기화 (복제)
 <details>
 <summary>시퀀스 다이어그램 보기</summary>
 
-```plantuml
-@startuml
-actor "사용자" as Client
-participant "API 게이트웨이" as Gateway
-participant "게시글 서비스" as Board
-database "게시글 DB" as BDB
-queue "카프카 (board.created)" as Kafka
-participant "포인트 서비스" as Point
-participant "사용자 서비스" as User
+```mermaid
+sequenceDiagram
+    actor Client as 사용자
+    participant Gateway as API 게이트웨이
+    participant Board as 게시글 서비스
+    participant BDB as 게시글 DB
+    participant Kafka as 카프카 (board.created)
+    participant Point as 포인트 서비스
+    participant User as 사용자 서비스
 
-Client -> Gateway : 게시글 작성 요청 (POST /api/boards, JWT 포함)
-Gateway -> Gateway : JwtAuthenticationFilter\n(userId 추출)
-Gateway -> Board : X-User-Id 헤더 포함 전달
-Board -> BDB : 게시글 정보 저장
-Board -> Kafka : 이벤트 발행: board.created (userId)
-Board -> Gateway : 204 No Content 응답
-Gateway -> Client : 성공 응답
+    Client->>Gateway: 게시글 작성 요청 (POST /api/boards, JWT 포함)
+    Gateway->>Gateway: JwtAuthenticationFilter (userId 추출)
+    Gateway->>Board: X-User-Id 헤더 포함 전달
+    Board->>BDB: 게시글 정보 저장
+    Board->>Kafka: 이벤트 발행: board.created (userId)
+    Board->>Gateway: 204 No Content 응답
+    Gateway->>Client: 성공 응답
 
-par [비동기 처리]
-    Kafka -> Point : 이벤트 구독
-    Point -> Point : 포인트 차감 (100P)
-    
-    Kafka -> User : 이벤트 구독
-    User -> User : 활동 점수 적립 (10점)
-end
-@enduml
+    rect rgb(240, 240, 240)
+        Note right of Kafka: 비동기 처리
+        par 포인트 차감
+            Kafka->>Point: 이벤트 구독
+            Point->>Point: 포인트 차감 (100P)
+        and 활동 점수 적립
+            Kafka->>User: 이벤트 구독
+            User->>User: 활동 점수 적립 (10점)
+        end
+    end
 ```
 </details>
 
@@ -172,19 +169,18 @@ end
 <details>
 <summary>시퀀스 다이어그램 보기</summary>
 
-```plantuml
-@startuml
-actor "사용자" as Client
-participant "API 게이트웨이" as Gateway
-participant "게시글 서비스" as Board
-database "게시글 DB" as BDB
+```mermaid
+sequenceDiagram
+    actor Client as 사용자
+    participant Gateway as API 게이트웨이
+    participant Board as 게시글 서비스
+    participant BDB as 게시글 DB
 
-Client -> Gateway : 전체 게시글 조회 (GET /api/boards)
-Gateway -> Board : 요청 전달
-Board -> BDB : 게시글 & 사용자 조인 조회 (복제된 데이터)
-Board -> Gateway : 사용자 이름 포함 목록 반환
-Gateway -> Client : 응답 반환
-@enduml
+    Client->>Gateway: 전체 게시글 조회 (GET /api/boards)
+    Gateway->>Board: 요청 전달
+    Board->>BDB: 게시글 & 사용자 조인 조회 (복제된 데이터)
+    Board->>Gateway: 사용자 이름 포함 목록 반환
+    Gateway->>Client: 응답 반환
 ```
 </details>
 

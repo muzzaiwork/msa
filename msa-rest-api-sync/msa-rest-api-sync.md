@@ -26,54 +26,50 @@
 
 ### 🏗️ 시스템 아키텍처
 
-```plantuml
-@startuml
-!theme plain
-skinparam componentStyle rectangle
+```mermaid
+graph TD
+    subgraph External ["External"]
+        Client["Client / Browser"]
+    end
 
-package "External" {
-    [Client / Browser] as Client
-}
+    subgraph MSANetwork ["MSA Network"]
+        subgraph Board_Service ["Board Service (Sync) (Port: 8082)"]
+            BS["Board Controller"]
+            BService["Board Service (Sync)"]
+            BR["Board Repository"]
+            BDB[("Board DB")]
+            
+            BS --> BService
+            BService --> BR
+            BR -.-> BDB
+        end
 
-package "MSA Network" {
-    package "Board Service (Sync) (Port: 8082)" {
-        component "Board Controller" as BS
-        component "Board Service (Sync)" as BService
-        component "Board Repository" as BR
-        database "Board DB" as BDB
-        
-        BS -> BService
-        BService -> BR
-        BR ..> BDB
-    }
+        subgraph User_Service ["User Service (Sync) (Port: 8081)"]
+            US["User Controller"]
+            UService["User Service (Sync)"]
+            UR["User Repository"]
+            UDB[("User DB")]
+            
+            US --> UService
+            UService --> UR
+            UR -.-> UDB
+        end
 
-    package "User Service (Sync) (Port: 8081)" {
-        component "User Controller" as US
-        component "User Service (Sync)" as UService
-        component "User Repository" as UR
-        database "User DB" as UDB
-        
-        US -> UService
-        UService -> UR
-        UR ..> UDB
-    }
+        subgraph Point_Service ["Point Service (Sync) (Port: 8083)"]
+            PS["Point Controller"]
+            PService["Point Service (Sync)"]
+            PR["Point Repository"]
+            PDB[("Point DB")]
+            
+            PS --> PService
+            PService --> PR
+            PR -.-> PDB
+        end
+    end
 
-    package "Point Service (Sync) (Port: 8083)" {
-        component "Point Controller" as PS
-        component "Point Service (Sync)" as PService
-        component "Point Repository" as PR
-        database "Point DB" as PDB
-        
-        PS -> PService
-        PService -> PR
-        PR ..> PDB
-    }
-}
-
-Client -> BS
-BService -[bold]right-> PService : 1. deductPoints
-BService -[bold]right-> UService : 3. addActivityScore
-@enduml
+    Client --> BS
+    BService == "1. deductPoints" ==> PService
+    BService == "3. addActivityScore" ==> UService
 ```
 
 ### 🛠 Tech Stack
@@ -110,38 +106,37 @@ BService -[bold]right-> UService : 3. addActivityScore
 <details>
 <summary>🔍 시퀀스 다이어그램 소스 보기</summary>
 
-```plantuml
-@startuml
-actor Client as C
-participant "Board Service (Sync)" as B
-participant "Point Service (Sync)" as P
-participant "User Service (Sync)" as U
+```mermaid
+sequenceDiagram
+    actor C as Client
+    participant B as Board Service (Sync)
+    participant P as Point Service (Sync)
+    participant U as User Service (Sync)
 
-C -> B : 게시글 작성 요청 (POST /boards)
+    C->>B: 게시글 작성 요청 (POST /boards)
 
-group #F0F0F0 정상 흐름 - Happy Path
-    B -> P : 1단계: 포인트 차감 (100pt)
-    P --> B : 차감 완료
-    
-    B -> B : 2단계: 게시글 저장 (Local DB)
-    
-    B -> U : 3단계: 활동 점수 적립 (10pt)
-    U --> B : 적립 완료
-    B --> C : 작성 성공 응답
-end
+    rect rgb(240, 240, 240)
+        Note over B,U: 정상 흐름 - Happy Path
+        B->>P: 1단계: 포인트 차감 (100pt)
+        P-->>B: 차감 완료
+        B->>B: 2단계: 게시글 저장 (Local DB)
+        B->>U: 3단계: 활동 점수 적립 (10pt)
+        U-->>B: 적립 완료
+        B-->>C: 작성 성공 응답
+    end
 
-group #FFE6E6 실패 및 보상 트랜잭션 - Compensation
-    B -> P : 1단계: 포인트 차감 (성공)
-    B -> B : 2단계: 게시글 저장 (성공)
-    B -> U : 3단계: 활동 점수 적립 (실패 발생!)
-    U --x B : Error!
-    
-    note right B: 보상 트랜잭션 시작
-    B -> B : 2단계 취소: 게시글 삭제
-    B -> P : 1단계 취소: 포인트 원복 (100pt 적립)
-    B --> C : 작성 실패 응답 (500 Error)
-end
-@enduml
+    rect rgb(255, 230, 230)
+        Note over B,U: 실패 및 보상 트랜잭션 - Compensation
+        B->>P: 1단계: 포인트 차감 (성공)
+        B->>B: 2단계: 게시글 저장 (성공)
+        B->>U: 3단계: 활동 점수 적립 (실패 발생!)
+        U--xB: Error!
+        
+        Note right of B: 보상 트랜잭션 시작
+        B->>B: 2단계 취소: 게시글 삭제
+        B->>P: 1단계 취소: 포인트 원복 (100pt 적립)
+        B-->>C: 작성 실패 응답 (500 Error)
+    end
 ```
 
 </details>
